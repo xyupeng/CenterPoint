@@ -81,10 +81,24 @@ def main():
     # keys: ['metadata', 'points', 'voxels', 'shape', 'num_points', 'num_voxels', 'coordinates', 'gt_boxes_and_cls',
     # 'hm', 'anno_box', 'ind', 'mask', 'cat']
 
-    from det3d.datasets.loader import build_dataloader
-    dl = build_dataloader(ds, batch_size=3, workers_per_gpu=4, num_gpus=1, dist=False)
+    # from det3d.datasets.loader import build_dataloader
+    # dl = build_dataloader(ds, batch_size=3, workers_per_gpu=4, num_gpus=1, dist=False)
+    from det3d.torchie.parallel import collate_kitti
+    from torch.utils.data import DataLoader
+    dl = DataLoader(
+        ds,
+        batch_size=3,
+        sampler=None,
+        shuffle=False,
+        num_workers=4,
+        collate_fn=collate_kitti,
+        # pin_memory=True,
+        pin_memory=False,
+    )
     print('==> Dataloader built.')
-    b = next(iter(dl))
+    x = next(iter(dl))
+    # keys: ['metadata', 'points', 'voxels', 'shape', 'num_points', 'num_voxels', 'coordinates', 'gt_boxes_and_cls',
+    # 'hm', 'anno_box', 'ind', 'mask', 'cat']
 
     import pdb; pdb.set_trace()
 

@@ -19,20 +19,20 @@ class PointPillars(SingleStageDetector):
         )
 
     def extract_feat(self, data):
-        input_features = self.reader(
-            data["features"], data["num_voxels"], data["coors"]
-        )
+        input_features = self.reader(data["features"], data["num_voxels"], data["coors"])
+        # input_features: tensor.Size(tot_voxels, 64)
+
         x = self.backbone(
             input_features, data["coors"], data["batch_size"], data["input_shape"]
-        )
+        )  # tensor.Size(bsz, 64, 468, 468)
         if self.with_neck:
-            x = self.neck(x)
+            x = self.neck(x)  # (bsz, 384, 468, 468)
         return x
 
     def forward(self, example, return_loss=True, **kwargs):
-        voxels = example["voxels"]
-        coordinates = example["coordinates"]
-        num_points_in_voxel = example["num_points"]
+        voxels = example["voxels"]  # tensor.Size(tot_voxels, 20, 5)
+        coordinates = example["coordinates"]  # tensor.Size(tot_voxels, 4)
+        num_points_in_voxel = example["num_points"]  # tensor.Size(tot_voxels)
         num_voxels = example["num_voxels"]
 
         batch_size = len(num_voxels)
@@ -47,6 +47,8 @@ class PointPillars(SingleStageDetector):
 
         x = self.extract_feat(data)
         preds, _ = self.bbox_head(x)
+        # preds: [{'reg', 'height', 'dim', 'rot', 'hm'}]
+        # _: tensor.Size(3, 64, 468, 468)
 
         if return_loss:
             return self.bbox_head.loss(example, preds, self.test_cfg)

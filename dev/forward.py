@@ -75,46 +75,44 @@ def get_cfg(args):
 def main():
     args = parse_args()
     cfg = get_cfg(args)
+
+    # build dataset & dataloader
     ds = build_dataset(cfg.data.train)
     print('==> Dataset built.')
-    # sample = ds[0]
-    # keys: ['metadata', 'points', 'voxels', 'shape', 'num_points', 'num_voxels', 'coordinates', 'gt_boxes_and_cls',
-    # 'hm', 'anno_box', 'ind', 'mask', 'cat']
 
-    # from det3d.datasets.loader import build_dataloader
-    # dl = build_dataloader(ds, batch_size=3, workers_per_gpu=4, num_gpus=1, dist=False)
     from det3d.torchie.parallel import collate_kitti
     from torch.utils.data import DataLoader
-    dl = DataLoader(
+    train_loader = DataLoader(
         ds,
         batch_size=3,
         sampler=None,
         shuffle=False,
         num_workers=4,
         collate_fn=collate_kitti,
-        # pin_memory=True,
         pin_memory=False,
     )
     print('==> Dataloader built.')
-    x = next(iter(dl))
-    '''
-        keys: ['metadata', 'points', 'voxels', 'shape', 'num_points', 'num_voxels', 'coordinates', 'gt_boxes_and_cls',
-            'hm', 'anno_box', 'ind', 'mask', 'cat']
-        'points': list of tensor.Size(num_pts, 5)
-        'voxel': tensor.Size(tot_voxels, 20, 5)
-        'shape': array([[468, 468, 1], [468, 468, 1], [468, 468, 1]])
-        'num_points': tensor.Size(tot_voxels,); num_pts in each voxel
-        'num_voxels': tensor.Size(3,); number of voxels for each sample
-        'coordinates': tensor.Size(total_voxels, 4); [sample_id, x, y, z]  # TODO: check xyz format
-        'gt_boxes_and_cls': tensor.Size(3, 500, 10)
-        'hm': [tensor.Size(3, 3, 468, 468)]
-        'anno_box': [tensor.Size(3, 500, 10)]
-        'ind': [tensor.Size(3, 500)]
-        'mask': [tensor.Size(3, 500)]
-        'cat': [tensor.Size(3, 500)]
-    '''
 
-    import pdb; pdb.set_trace()
+    # build model
+    model = build_detector(cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
+    model.CLASSES = ds.CLASSES
+    model = model.cuda()
+
+    # train
+    from det3d.torchie.trainer.trainer import example_to_device, parse_second_losses
+    for i, data_batch in enumerate(train_loader):
+        example = example_to_device(
+            data_batch, torch.cuda.current_device(), non_blocking=False
+        )
+
+        losses = model(example, return_loss=True)
+        loss, log_vars = parse_second_losses(losses)
+        del losses
+
+        outputs = dict(
+            loss=loss, log_vars=log_vars, num_samples=-1
+        )
+        import pdb; pdb.set_trace()
 
 
 if __name__ == '__main__':

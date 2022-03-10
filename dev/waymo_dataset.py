@@ -76,8 +76,16 @@ def main():
     args = parse_args()
     cfg = get_cfg(args)
     ds = build_dataset(cfg.data.train)
+    print('==> Dataset built.')
+    # sample = ds[0]
+    # keys: ['metadata', 'points', 'voxels', 'shape', 'num_points', 'num_voxels', 'coordinates', 'gt_boxes_and_cls',
+    # 'hm', 'anno_box', 'ind', 'mask', 'cat']
 
-    sample = ds[0]
+    from det3d.datasets.loader import build_dataloader
+    dl = build_dataloader(ds, batch_size=3, workers_per_gpu=4, num_gpus=1, dist=False)
+    print('==> Dataloader built.')
+    b = next(iter(dl))
+
     import pdb; pdb.set_trace()
 
 

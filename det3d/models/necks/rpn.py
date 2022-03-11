@@ -35,12 +35,12 @@ class RPN(nn.Module):
         **kwargs
     ):
         super(RPN, self).__init__()
-        self._layer_strides = ds_layer_strides
-        self._num_filters = ds_num_filters
-        self._layer_nums = layer_nums
-        self._upsample_strides = us_layer_strides
-        self._num_upsample_filters = us_num_filters
-        self._num_input_features = num_input_features
+        self._layer_strides = ds_layer_strides  # [1, 2, 2]
+        self._num_filters = ds_num_filters  # [64, 128, 256]
+        self._layer_nums = layer_nums  # [3, 5, 5]
+        self._upsample_strides = us_layer_strides  # [1, 2, 4]
+        self._num_upsample_filters = us_num_filters  # [128, 128, 128]
+        self._num_input_features = num_input_features  # 64
 
         if norm_cfg is None:
             norm_cfg = dict(type="BN", eps=1e-3, momentum=0.01)
@@ -63,7 +63,7 @@ class RPN(nn.Module):
         for val in must_equal_list:
             assert val == must_equal_list[0]
 
-        in_filters = [self._num_input_features, *self._num_filters[:-1]]
+        in_filters = [self._num_input_features, *self._num_filters[:-1]]  # [64, 64, 128]
         blocks = []
         deblocks = []
 

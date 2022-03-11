@@ -15,6 +15,8 @@ from ..utils import build_norm_layer
 class PFNLayer(nn.Module):
     def __init__(self, in_channels, out_channels, norm_cfg=None, last_layer=False):
         """
+        This is just a PointNet layer, i.e., cat(x, max(x))
+
         Pillar Feature Net Layer.
         The Pillar Feature Net could be composed of a series of these layers, but the PointPillars paper results only
         used a single PFNLayer. This layer performs a similar role as second.pytorch.voxelnet.VFELayer.
@@ -38,6 +40,16 @@ class PFNLayer(nn.Module):
         self.norm = build_norm_layer(self.norm_cfg, self.units)[1]
 
     def forward(self, inputs):
+        '''
+        Input:
+            inputs: shape=(num_voxels, max_pts_per_voxel, num_features)
+
+        Return:
+            if last_layer:
+                shape=(num_voxels, 1, out_channels)
+            else:
+                shape=(num_voxels, max_pts_per_voxel, out_channels)
+        '''
 
         x = self.linear(inputs)
         torch.backends.cudnn.enabled = False
@@ -114,6 +126,16 @@ class PillarFeatureNet(nn.Module):
         self.y_offset = self.vy / 2 + pc_range[1]
 
     def forward(self, features, num_voxels, coors):
+        '''
+        Input:
+            features: shape=(num_voxels, max_pts_per_voxel, num_features)
+            num_voxels: shape=(num_voxels,); num_pts in each voxel
+            coords: shape=(num_voxels, 4); [sample_id, z, y, x]
+
+        Return:
+            shape=(num_voxels, pfn_out_features)
+
+        '''
         device = features.device
 
         if self.virtual:
@@ -129,11 +151,11 @@ class PillarFeatureNet(nn.Module):
         points_mean = features[:, :, :3].sum(dim=1, keepdim=True) / num_voxels.type_as(
             features
         ).view(-1, 1, 1)
-        f_cluster = features[:, :, :3] - points_mean
+        f_cluster = features[:, :, :3] - points_mean  # offset to pts mean
 
         # Find distance of x, y, and z from pillar center
         # f_center = features[:, :, :2]
-        f_center = torch.zeros_like(features[:, :, :2])
+        f_center = torch.zeros_like(features[:, :, :2])  # offset to voxel center
         f_center[:, :, 0] = features[:, :, 0] - (
             coors[:, 3].to(dtype).unsqueeze(1) * self.vx + self.x_offset
         )
@@ -180,6 +202,13 @@ class PointPillarsScatter(nn.Module):
         self.nchannels = num_input_features
 
     def forward(self, voxel_features, coords, batch_size, input_shape):
+        '''
+        Input:
+            voxel_features: shape=(num_voxels, num_input_features)
+            coords: shape=(num_voxels, 4); [sample_id, z, y, x]
+            batch_size: int
+            input_shape: ndarray([468, 468, 1])
+        '''
 
         self.nx = input_shape[0]
         self.ny = input_shape[1]
@@ -214,5 +243,5 @@ class PointPillarsScatter(nn.Module):
         batch_canvas = torch.stack(batch_canvas, 0)
 
         # Undo the column stacking to final 4-dim tensor
-        batch_canvas = batch_canvas.view(batch_size, self.nchannels, self.ny, self.nx)
+        batch_canvas = batch_canvas.view(batch_size, self.nchannels, self.ny, self.nx)  # (N, C, H, W)
         return batch_canvas

@@ -20,19 +20,19 @@ class PointPillars(SingleStageDetector):
 
     def extract_feat(self, data):
         input_features = self.reader(data["features"], data["num_voxels"], data["coors"])
-        # input_features: tensor.Size(tot_voxels, 64)
+        # input_features: shape=(batch_tot_voxels, 64)
 
-        x = self.backbone(
+        x = self.backbone(  # scatter as a sparse pseudo image (BEV)
             input_features, data["coors"], data["batch_size"], data["input_shape"]
-        )  # tensor.Size(bsz, 64, 468, 468)
+        )  # shape=(bsz, 64, 468, 468)
         if self.with_neck:
-            x = self.neck(x)  # (bsz, 384, 468, 468)
+            x = self.neck(x)  # shape=(bsz, 384, 468, 468)
         return x
 
     def forward(self, example, return_loss=True, **kwargs):
-        voxels = example["voxels"]  # tensor.Size(tot_voxels, 20, 5)
-        coordinates = example["coordinates"]  # tensor.Size(tot_voxels, 4)
-        num_points_in_voxel = example["num_points"]  # tensor.Size(tot_voxels)
+        voxels = example["voxels"]  # tensor(shape=(batch_tot_voxels, 20, 5))
+        coordinates = example["coordinates"]  # tensor(shape=(batch_tot_voxels, 4))
+        num_points_in_voxel = example["num_points"]  # tensor(shape=(batch_tot_voxels,))
         num_voxels = example["num_voxels"]
 
         batch_size = len(num_voxels)
@@ -42,13 +42,13 @@ class PointPillars(SingleStageDetector):
             num_voxels=num_points_in_voxel,
             coors=coordinates,
             batch_size=batch_size,
-            input_shape=example["shape"][0],
+            input_shape=example["shape"][0],  # ndarray([468, 468, 1])
         )
 
-        x = self.extract_feat(data)
+        x = self.extract_feat(data)  # shape=(bsz, 384, 468, 468)
         preds, _ = self.bbox_head(x)
         # preds: [{'reg', 'height', 'dim', 'rot', 'hm'}]
-        # _: tensor.Size(3, 64, 468, 468)
+        # _: tensor(shape=(3, 64, 468, 468))
 
         if return_loss:
             return self.bbox_head.loss(example, preds, self.test_cfg)

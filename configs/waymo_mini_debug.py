@@ -15,19 +15,19 @@ target_assigner = dict(
 
 # model settings
 model = dict(
-    type="PointPillars",
+    type="PointPillars",  # models/detectors/point_pillars.py
     pretrained=None,
     reader=dict(
-        type="PillarFeatureNet",
+        type="PillarFeatureNet",  # models/readers/pillar_encoder.py
         num_filters=[64, 64],
         num_input_features=5,
         with_distance=False,
         voxel_size=(0.32, 0.32, 6.0),
         pc_range=(-74.88, -74.88, -2, 74.88, 74.88, 4.0),
     ),
-    backbone=dict(type="PointPillarsScatter", ds_factor=1),
+    backbone=dict(type="PointPillarsScatter", ds_factor=1),  # models/readers/pillar_encoder.py
     neck=dict(
-        type="RPN",
+        type="RPN",  # models/necks/rpn.py
         layer_nums=[3, 5, 5],
         ds_layer_strides=[1, 2, 2],
         ds_num_filters=[64, 128, 256],

@@ -111,7 +111,7 @@ def build_ds(cfg):
     sample = {
       'lidar' = {
           'type': 'lidar',
-          'points': ndarray(num_pts, 5),  # raw points; num_pts=183680
+          'points': ndarray(num_pts, 5),  # raw points; [x, y, z, intensity, elongation]; num_pts=183680;
           'annotations': {
               'boxes': ndarray(num_boxes, 9)
               'names': ndarray(num_boxes, ), dtype=str (class name)
@@ -291,12 +291,12 @@ def build_dl(ds):
     x = next(iter(dl))
     x = {
         'metadata': list of dict; list of metadata of each sample; len == bsz
-        'points': list of tensor(shape=(num_pts, 5)),  # len == bsz
+        'points': list of tensor(shape=(num_pts_i, 5)),  # point cloud for each sample; len == bsz;
         'voxels': tensor(shape=(batch_tot_voxels, 20, 5))
         'shape': array([[468, 468, 1], [468, 468, 1], [468, 468, 1]])
         'num_points': tensor(shape=(batch_tot_voxels,))  # num_pts in each voxel
         'num_voxels': tensor(shape=(bsz,))  # number of voxels for each sample
-        'coordinates': tensor(shape=(batch_tot_voxels, 4))  # [sample_id, x, y, z]; TODO: check xyz format
+        'coordinates': tensor(shape=(batch_tot_voxels, 4))  # [sample_id, z, y, x]; TODO: check xyz format
         'gt_boxes_and_cls': tensor(shape=(bsz, 500, 10))
         'hm': [tensor(shape=(bsz, 3, 468, 468))]
         'anno_box': [tensor(shape=(bsz, 500, 10))]

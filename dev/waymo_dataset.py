@@ -111,7 +111,7 @@ def build_ds(cfg):
     sample = {
       'lidar' = {
           'type': 'lidar',
-          'points': ndarray(num_pts, 5),
+          'points': ndarray(num_pts, 5),  # raw points; num_pts=183680
           'annotations': {
               'boxes': ndarray(num_boxes, 9)
               'names': ndarray(num_boxes, ), dtype=str (class name)
@@ -137,7 +137,7 @@ def build_ds(cfg):
     sample = {
       'lidar' = {
           'type': 'lidar',
-          'points': ndarray(num_pts, 5),  # num_pts=191407; raw points + sampled points
+          'points': ndarray(num_pts, 5),  # raw points + sampled points; may be flexible due to random aug
           'annotations': {
               'gt_boxes': ndarray(shape=(num_boxes, 9), dtype=float32),  # num_boxes=35
               'gt_names': ndarray(shape=(num_boxes, ), dtype=str),  # class name for each gt_box

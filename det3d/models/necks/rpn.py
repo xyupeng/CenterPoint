@@ -21,6 +21,9 @@ from ..utils import build_norm_layer
 
 @NECKS.register_module
 class RPN(nn.Module):
+    '''
+        only lateral connection (upsample); no top-down pathway (compared with FPN)
+    '''
     def __init__(
         self,
         layer_nums,
@@ -148,6 +151,12 @@ class RPN(nn.Module):
                 xavier_init(m, distribution="uniform")
 
     def forward(self, x):
+        '''
+        Input:
+            x: shape=(bsz, C_in, H, W)
+        Return:
+            shape=(bsz, C_out, H, W)
+        '''
         ups = []
         for i in range(len(self.blocks)):
             x = self.blocks[i](x)

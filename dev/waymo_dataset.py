@@ -23,6 +23,13 @@ from det3d.torchie.apis import (
 )
 import torch.distributed as dist
 import subprocess
+import random
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
 
 def parse_args():
@@ -73,11 +80,82 @@ def get_cfg(args):
 
 
 def build_ds(cfg):
-    ds = build_dataset(cfg.data.train)
+    ds = build_dataset(cfg.data.train)  # len(train_set) == 158081
     print('==> Dataset built.')
     # sample = ds[0]
-    # keys: ['metadata', 'points', 'voxels', 'shape', 'num_points', 'num_voxels', 'coordinates', 'gt_boxes_and_cls',
-    # 'hm', 'anno_box', 'ind', 'mask', 'cat']
+
+    '''
+    # -----------------------------------------
+    # ds._waymo_infos
+    # -----------------------------------------
+    assert len(ds._waymo_infos) == len(ds)  # 158081 training samples/frames
+    x0 = ds._waymo_infos[0]
+    x0 = {
+        'path': 'data/Waymo/train/lidar/seq_0_frame_0.pkl',
+        'anno_path': 'data/Waymo/train/annos/seq_0_frame_0.pkl',
+        'token': 'seq_0_frame_0.pkl',
+        'timestamp': 1550083467.34637,
+        'sweeps': [],
+        'gt_boxes': ndarray(shape=(num_boxes, 9), dtype=float32),
+        'gt_names': ndarray(shape=(num_boxes, ), dtype=str)
+    }
+    '''
+
+    '''
+    # -----------------------------------------
+    # first 2:
+    # dict(type="LoadPointCloudFromFile", dataset=dataset_type),
+    # dict(type="LoadPointCloudAnnotations", with_bbox=True),
+    # -----------------------------------------
+    sample = ds[0]
+    sample = {
+      'lidar' = {
+          'type': 'lidar',
+          'points': ndarray(num_pts, 5),
+          'annotations': {
+              'boxes': ndarray(num_boxes, 9)
+              'names': ndarray(num_boxes, ), dtype=str (class name)
+          }
+          'nsweeps': 1
+      },
+      'metadata': {'image_prefix', 'num_point_features', 'token'},
+      'calib': None,
+      'cam': {},
+      'mode': 'train',
+      'type': 'WaymoDataset'
+    }
+    '''
+
+    '''
+    # -----------------------------------------
+    # first 3:
+    # dict(type="LoadPointCloudFromFile", dataset=dataset_type),
+    # dict(type="LoadPointCloudAnnotations", with_bbox=True),
+    # dict(type="Preprocess", cfg=train_preprocessor),
+    # -----------------------------------------
+    sample = ds[0]
+    sample = {
+      'lidar' = {
+          'type': 'lidar',
+          'points': ndarray(num_pts, 5),  # num_pts=191407; raw points + sampled points
+          'annotations': {
+              'gt_boxes': ndarray(shape=(num_boxes, 9), dtype=float32),  # num_boxes=35
+              'gt_names': ndarray(shape=(num_boxes, ), dtype=str),  # class name for each gt_box
+              'gt_classes': ndarray(shape=(num_boxes, ), dtype=int32),  # class id for each gt_box, start from 1
+          }
+          'nsweeps': 1
+      },
+      'metadata': {'image_prefix', 'num_point_features', 'token'},
+      'calib': None,
+      'cam': {},
+      'mode': 'train',
+      'type': 'WaymoDataset'
+    }
+    '''
+
+    # full pipeline
+    # keys: ['metadata', 'points', 'voxels', 'shape', 'num_points', 'num_voxels', 'coordinates',
+    # 'gt_boxes_and_cls', 'hm', 'anno_box', 'ind', 'mask', 'cat']
     return ds
 
 
@@ -98,22 +176,22 @@ def build_dl(ds):
     )
     print('==> Dataloader built.')
 
-    x = next(iter(dl))
     '''
+        x = next(iter(dl))
         x keys: ['metadata', 'points', 'voxels', 'shape', 'num_points', 'num_voxels', 'coordinates', 'gt_boxes_and_cls',
             'hm', 'anno_box', 'ind', 'mask', 'cat']
-        'points': list of tensor.Size(num_pts, 5)
-        'voxel': tensor.Size(tot_voxels, 20, 5)
+        'points': list of tensor(shape=(num_pts, 5))
+        'voxel': tensor(shape=(tot_voxels, 20, 5))
         'shape': array([[468, 468, 1], [468, 468, 1], [468, 468, 1]])
-        'num_points': tensor.Size(tot_voxels,); num_pts in each voxel
-        'num_voxels': tensor.Size(3,); number of voxels for each sample
-        'coordinates': tensor.Size(total_voxels, 4); [sample_id, x, y, z]  # TODO: check xyz format
-        'gt_boxes_and_cls': tensor.Size(3, 500, 10)
-        'hm': [tensor.Size(3, 3, 468, 468)]
-        'anno_box': [tensor.Size(3, 500, 10)]
-        'ind': [tensor.Size(3, 500)]
-        'mask': [tensor.Size(3, 500)]
-        'cat': [tensor.Size(3, 500)]
+        'num_points': tensor(shape=(tot_voxels,))  # num_pts in each voxel
+        'num_voxels': tensor(shape=(3,))  # number of voxels for each sample
+        'coordinates': tensor(shape=(total_voxels, 4))  # [sample_id, x, y, z]; TODO: check xyz format
+        'gt_boxes_and_cls': tensor(shape=(3, 500, 10))
+        'hm': [tensor(shape=(3, 3, 468, 468))]
+        'anno_box': [tensor(shape=(3, 500, 10))]
+        'ind': [tensor(shape=(3, 500))]
+        'mask': [tensor(shape=(3, 500))]
+        'cat': [tensor(shape=(3, 500))]
     '''
     return dl
 
@@ -129,4 +207,5 @@ def main():
 
 
 if __name__ == '__main__':
+    set_seed(42)
     main()

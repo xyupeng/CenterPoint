@@ -72,15 +72,16 @@ def get_cfg(args):
     return cfg
 
 
-def main():
-    args = parse_args()
-    cfg = get_cfg(args)
+def build_ds(cfg):
     ds = build_dataset(cfg.data.train)
     print('==> Dataset built.')
     # sample = ds[0]
     # keys: ['metadata', 'points', 'voxels', 'shape', 'num_points', 'num_voxels', 'coordinates', 'gt_boxes_and_cls',
     # 'hm', 'anno_box', 'ind', 'mask', 'cat']
+    return ds
 
+
+def build_dl(ds):
     # from det3d.datasets.loader import build_dataloader
     # dl = build_dataloader(ds, batch_size=3, workers_per_gpu=4, num_gpus=1, dist=False)
     from det3d.torchie.parallel import collate_kitti
@@ -96,9 +97,10 @@ def main():
         pin_memory=False,
     )
     print('==> Dataloader built.')
+
     x = next(iter(dl))
     '''
-        keys: ['metadata', 'points', 'voxels', 'shape', 'num_points', 'num_voxels', 'coordinates', 'gt_boxes_and_cls',
+        x keys: ['metadata', 'points', 'voxels', 'shape', 'num_points', 'num_voxels', 'coordinates', 'gt_boxes_and_cls',
             'hm', 'anno_box', 'ind', 'mask', 'cat']
         'points': list of tensor.Size(num_pts, 5)
         'voxel': tensor.Size(tot_voxels, 20, 5)
@@ -113,6 +115,15 @@ def main():
         'mask': [tensor.Size(3, 500)]
         'cat': [tensor.Size(3, 500)]
     '''
+    return dl
+
+
+def main():
+    args = parse_args()
+    cfg = get_cfg(args)
+    ds = build_ds(cfg)
+
+    # dl = build_dl(ds)
 
     import pdb; pdb.set_trace()
 

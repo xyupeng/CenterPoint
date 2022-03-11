@@ -153,6 +153,42 @@ def build_ds(cfg):
     }
     '''
 
+    '''
+    # -----------------------------------------
+    # first 4:
+    # dict(type="LoadPointCloudFromFile", dataset=dataset_type),
+    # dict(type="LoadPointCloudAnnotations", with_bbox=True),
+    # dict(type="Preprocess", cfg=train_preprocessor),
+    # dict(type="Voxelization", cfg=voxel_generator),
+    # -----------------------------------------
+    sample = ds[0]
+    sample = {
+        'lidar' = {
+            'type': 'lidar',
+            'points': ndarray(num_pts, 5),  # raw points + sampled points;
+            'annotations': {
+                'gt_boxes': ndarray(shape=(num_boxes, 9), dtype=float32),  # num_boxes=35
+                'gt_names': ndarray(shape=(num_boxes, ), dtype=str),  # class name for each gt_box
+                'gt_classes': ndarray(shape=(num_boxes, ), dtype=int32),  # class id for each gt_box, start from 1
+            }
+            'nsweeps': 1,
+            'voxels': {
+                'voxels': ndarray(shape=(num_voxels, 20, 5), dtype=float32),
+                'coordinates': ndarray(shape=(num_voxels, 3), dtype=int32),
+                'num_points': ndarray(shape=(num_voxels, ), dtype=int32),  # num_pts in each voxel; max 20
+                'num_voxels': ndarray([num_voxels]), 
+                'shape': ndarray([468, 468, 1]),
+                'range': ndarray(shape=(6, ), dtype=float32),
+                'size': ndarray([0.32, 0.32, 6.0], dtype=float32),
+            }
+      },
+      'metadata': {'image_prefix', 'num_point_features', 'token'},
+      'calib': None,
+      'cam': {},
+      'mode': 'train',
+      'type': 'WaymoDataset'
+    }
+    '''
     # full pipeline
     # keys: ['metadata', 'points', 'voxels', 'shape', 'num_points', 'num_voxels', 'coordinates',
     # 'gt_boxes_and_cls', 'hm', 'anno_box', 'ind', 'mask', 'cat']

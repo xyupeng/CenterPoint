@@ -47,7 +47,13 @@ class PointPillars(SingleStageDetector):
 
         x = self.extract_feat(data)  # shape=(bsz, 384, 468, 468)
         preds, _ = self.bbox_head(x)
-        # preds: [{'reg', 'height', 'dim', 'rot', 'hm'}]
+        # preds[0] = {
+        #   'reg': shape=(bsz, 2, 468, 468),
+        #   'height': shape=(bsz, 1, 468, 468),
+        #   'dim': shape=(bsz, 3, 468, 468),
+        #   'rot': shape=(bsz, 2, 468, 468),
+        #   'hm': shape=(bsz, 3, 468, 468),
+        # }
         # _: tensor(shape=(3, 64, 468, 468))
 
         if return_loss:

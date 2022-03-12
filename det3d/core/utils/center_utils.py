@@ -63,9 +63,10 @@ def draw_umich_gaussian(heatmap, center, radius, k=1):
     return heatmap
 
 def _gather_feat(feat, ind, mask=None):
-    dim  = feat.size(2)
-    ind  = ind.unsqueeze(2).expand(ind.size(0), ind.size(1), dim)
-    feat = feat.gather(1, ind)
+    # feat: (B, H*W, C)
+    dim  = feat.size(2)  # C
+    ind  = ind.unsqueeze(2).expand(ind.size(0), ind.size(1), dim)  # (B, 500, C)
+    feat = feat.gather(1, ind)  # shape=(B, 500, C)
     if mask is not None:
         mask = mask.unsqueeze(2).expand_as(feat)
         feat = feat[mask]

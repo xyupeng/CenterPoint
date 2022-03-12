@@ -15,12 +15,12 @@ class RegLoss(nn.Module):
     super(RegLoss, self).__init__()
   
   def forward(self, output, mask, ind, target):
-    pred = _transpose_and_gather_feat(output, ind)
+    pred = _transpose_and_gather_feat(output, ind)  # shape=(B, M, C=8)
     mask = mask.float().unsqueeze(2) 
 
     loss = F.l1_loss(pred*mask, target*mask, reduction='none')
     loss = loss / (mask.sum() + 1e-4)
-    loss = loss.transpose(2 ,0).sum(dim=2).sum(dim=1)
+    loss = loss.transpose(2 ,0).sum(dim=2).sum(dim=1)  # shape=(C=8, )
     return loss
 
 class FastFocalLoss(nn.Module):
@@ -34,8 +34,8 @@ class FastFocalLoss(nn.Module):
   def forward(self, out, target, ind, mask, cat):
     '''
     Arguments:
-      out, target: B x C x H x W
-      ind, mask: B x M
+      out, target: B x C x H x W  (C is num_classes)
+      ind, mask: B x M (M is max_bboxes per sample)
       cat (category id for peaks): B x M
     '''
     mask = mask.float()
@@ -43,8 +43,8 @@ class FastFocalLoss(nn.Module):
     neg_loss = torch.log(1 - out) * torch.pow(out, 2) * gt
     neg_loss = neg_loss.sum()
 
-    pos_pred_pix = _transpose_and_gather_feat(out, ind) # B x M x C
-    pos_pred = pos_pred_pix.gather(2, cat.unsqueeze(2)) # B x M
+    pos_pred_pix = _transpose_and_gather_feat(out, ind)  # shape=(B, M, C); features at ind for each sample
+    pos_pred = pos_pred_pix.gather(2, cat.unsqueeze(2))  # shape=(B, M, 1); select class for each box
     num_pos = mask.sum()
     pos_loss = torch.log(pos_pred) * torch.pow(1 - pos_pred, 2) * \
                mask.unsqueeze(2)

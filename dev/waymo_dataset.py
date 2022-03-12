@@ -292,17 +292,17 @@ def build_dl(ds):
     x = {
         'metadata': list of dict; list of metadata of each sample; len == bsz
         'points': list of tensor(shape=(num_pts_i, 5)),  # point cloud for each sample; len == bsz;
-        'voxels': tensor(shape=(batch_tot_voxels, 20, 5))
-        'shape': array([[468, 468, 1], [468, 468, 1], [468, 468, 1]])
-        'num_points': tensor(shape=(batch_tot_voxels,))  # num_pts in each voxel
-        'num_voxels': tensor(shape=(bsz,))  # number of voxels for each sample
-        'coordinates': tensor(shape=(batch_tot_voxels, 4))  # [sample_id, z, y, x]; TODO: check xyz format
-        'gt_boxes_and_cls': tensor(shape=(bsz, 500, 10))
-        'hm': [tensor(shape=(bsz, 3, 468, 468))]
-        'anno_box': [tensor(shape=(bsz, 500, 10))]
-        'ind': [tensor(shape=(bsz, 500))]
-        'mask': [tensor(shape=(bsz, 500))]
-        'cat': [tensor(shape=(bsz, 500))]
+        'voxels': tensor(shape=(batch_tot_voxels, 20, 5)),
+        'shape': array([[468, 468, 1], [468, 468, 1], [468, 468, 1]]),
+        'num_points': tensor(shape=(batch_tot_voxels,)),  # num_pts in each voxel
+        'num_voxels': tensor(shape=(bsz,)),  # number of voxels for each sample
+        'coordinates': tensor(shape=(batch_tot_voxels, 4), dtype=int32),  # [sample_id, z, y, x]; TODO: check xyz format
+        'gt_boxes_and_cls': tensor(shape=(bsz, 500, 10), dtype=float32),  # 500=max_bboxes
+        'hm': [tensor(shape=(bsz, 3, 468, 468), dtype=float32)],  # between [0., 1.]
+        'anno_box': [tensor(shape=(bsz, 500, 10), dtype=float32)],
+        'ind': [tensor(shape=(bsz, 500), dtype=int64)],  # min=0, max=468*468-1 (H * W - 1)
+        'mask': [tensor(shape=(bsz, 500), dtype=uint8)],  # 0 or 1
+        'cat': [tensor(shape=(bsz, 500), dtype=int64)],  # min=0, max=2; may be class id
     }
     '''
     return dl

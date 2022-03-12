@@ -66,13 +66,16 @@ class SepHead(nn.Module):
     def __init__(
         self,
         in_channels,
-        heads,
+        heads,  # dict
         head_conv=64,
         final_kernel=1,
         bn=False,
         init_bias=-2.19,
         **kwargs,
     ):
+        '''
+            heads: {'reg': (2, 2), 'height': (1, 2), 'dim': (3, 2), 'rot': (2, 2), 'hm': (3, 2)}
+        '''
         super(SepHead, self).__init__(**kwargs)
 
         self.heads = heads 
@@ -219,7 +222,7 @@ class CenterHead(nn.Module):
         if dcn_head:
             print("Use Deformable Convolution in the CenterHead!")
 
-        for num_cls in num_classes:
+        for num_cls in num_classes:  # len(num_classes) == len(tasks)
             heads = copy.deepcopy(common_heads)
             if not dcn_head:
                 heads.update(dict(hm=(num_cls, num_hm_conv)))
@@ -236,10 +239,18 @@ class CenterHead(nn.Module):
     def forward(self, x, *kwargs):
         ret_dicts = []
 
-        x = self.shared_conv(x)
+        x = self.shared_conv(x)  # shape=(3, 64, 468, 468)
 
-        for task in self.tasks:
+        for task in self.tasks:  # one task
             ret_dicts.append(task(x))
+
+        # ret_dicts[0] = {
+        #   'reg': shape=(bsz, 2, 468, 468),
+        #   'height': shape=(bsz, 1, 468, 468),
+        #   'dim': shape=(bsz, 3, 468, 468),
+        #   'rot': shape=(bsz, 2, 468, 468),
+        #   'hm': shape=(bsz, 3, 468, 468),  # 3=num_classes
+        # }
 
         return ret_dicts, x
 
@@ -255,7 +266,7 @@ class CenterHead(nn.Module):
 
             hm_loss = self.crit(preds_dict['hm'], example['hm'][task_id], example['ind'][task_id], example['mask'][task_id], example['cat'][task_id])
 
-            target_box = example['anno_box'][task_id]
+            target_box = example['anno_box'][task_id]  # (bsz, 500, 10)
             # reconstruct the anno_box from multiple reg heads
             if self.dataset in ['waymo', 'nuscenes']:
                 if 'vel' in preds_dict:
